@@ -1,16 +1,22 @@
 package client
 
-import "net/rpc"
+import (
+	"fmt"
+	"log"
+	"net/rpc"
+	"rpctest/server"
+)
 
-func CallEcho(arg string) (result string, err error) {
-	var client *rpc.Client
-	client, err = rpc.DialHTTP("tcp", ":9999") //通过rpc.DialHTTP创建一个client
+func Client() {
+	client, err := rpc.DialHTTP("tcp", ":1234")
 	if err != nil {
-		return "", err
+		log.Fatal("dialing:", err)
 	}
-	err = client.Call("EchoService.Echo", arg, &result) //通过类型加方法名指定要调用的方法
+	args := &server.Args{7, 8}
+	var reply int
+	err = client.Call("Arith.Multiply", args, &reply)
 	if err != nil {
-		return "", err
+		log.Fatal("arith error:", err)
 	}
-	return result, err
+	fmt.Printf("Arith: %d*%d=%d", args.A, args.B, reply)
 }

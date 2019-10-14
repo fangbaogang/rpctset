@@ -1,26 +1,58 @@
 package server
 
 import (
+	"errors"
 	"log"
+	"net"
 	"net/http"
 	"net/rpc"
 )
 
-type EchoService struct{}
+// func (t *T) MethodName(argType T1, replyType *T2) error
 
-func (service EchoService) Echo(arg string, result *string) error {
-	*result = arg //在这里直接将第二个参数（也就是实际的返回值）赋值为arg
-	return nil    //error返回nil，也就是没有发生异常
+// 方法的返回值如果不为空， 那么它作为一个字符串返回给调用者
+
+//参数
+type Args struct {
+	A, B int
 }
-func RegisterAndServe() {
-	err := rpc.Register(&EchoService{}) //注册并不是注册方法，而是注册EchoService的一个实例
-	if err != nil {
-		log.Fatal("error registering", err)
-		return
+
+//sang
+type Quotient struct {
+	Quo, Rem int
+}
+
+type Arith int
+
+func (t *Arith) Multiply(args *Args, reply *int) error {
+
+	*reply = args.A * args.B
+
+	return nil
+}
+
+func (t *Arith) Divide(args *Args, quo *Quotient) error {
+
+	if args.B == 0 {
+		return errors.New("divide by zero")
 	}
-	rpc.HandleHTTP()                        //rpc通信协议设置为http协议
-	err = http.ListenAndServe(":9999", nil) //端口设置为9999
+	quo.Quo = args.A / args.B
+	quo.Quo = args.A % args.B
+
+	return nil
+}
+
+func Server() {
+	arith := new(Arith)
+	rpc.Register(arith)
+
+	rpc.HandleHTTP()
+
+	l, err := net.Listen("tcp", ":1234")
 	if err != nil {
-		log.Fatal("error listening", err)
+		log.Fatal("listen error:", err)
+
 	}
+	go http.Serve(l, nil)
+
 }
